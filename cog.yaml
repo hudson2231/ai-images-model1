@@ -2,14 +2,6 @@ build:
   python_version: "3.10"
   system_packages:
     - "libgl1-mesa-glx"
-  python_packages:
-    - torch
-    - torchvision
-    - diffusers
-    - transformers
-    - accelerate
-    - safetensors
-    - opencv-python
-    - matplotlib
+  python_requirements: requirements.txt
 
 predict: "model.py:Predictor"
