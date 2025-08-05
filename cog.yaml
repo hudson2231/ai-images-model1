@@ -1,6 +1,9 @@
 image: r8.im/hudson2231/ai-images-model1
+
 build:
   gpu: true
   python_version: "3.10"
   python_requirements: requirements.txt
+  cog_runtime: true
+
 predict: model.py:Predictor
