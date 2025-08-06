@@ -1,12 +1,8 @@
-torch==2.1.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-torchvision==0.16.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-diffusers==0.27.2
-transformers==4.40.0
-accelerate==0.30.0
-safetensors==0.4.2
+torch==2.1.0
+torchvision==0.16.0
+diffusers==0.24.0
+transformers==4.37.2
 opencv-python==4.9.0.80
-pillow==10.3.0
-huggingface_hub==0.20.3
-numpy<2
-cog>=0.10.0
-
+accelerate==0.27.2
+xformers==0.0.25
+Pillow==10.3.0
