@@ -10,7 +10,8 @@ from cog import BasePredictor, Input, Path
 class Predictor(BasePredictor):
     def setup(self):
         controlnet = ControlNetModel.from_pretrained(
-            "lllyasviel/sd-controlnet-scribble", torch_dtype=torch.float16
+            "lllyasviel/sd-controlnet-scribble", 
+            torch_dtype=torch.float16
         )
         self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
@@ -19,25 +20,28 @@ class Predictor(BasePredictor):
             torch_dtype=torch.float16,
         )
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
-        self.pipe.enable_model_cpu_offload()  # Ensures it works on GPU in Replicate infra
-        self.pipe.to("cuda")
+        self.pipe.to("cuda")  # Run directly on GPU
 
     def predict(
         self,
         image: Path = Input(description="Image to convert to line art"),
     ) -> Path:
+        # Load and preprocess input
         input_image = Image.open(image).convert("RGB")
         np_image = np.array(input_image)
         gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
         edges = cv2.Canny(gray, 100, 200)
         canny_image = Image.fromarray(edges)
 
+        # Generate image
         result = self.pipe(
-            prompt="black and white lineart drawing, high detail, clean lines, for adult coloring books",
+            prompt="black and white lineart drawing, high detail, clean lines, adult coloring book style",
             image=canny_image,
             num_inference_steps=20,
         ).images[0]
 
+        # Save and return
         output_path = "/tmp/output.png"
         result.save(output_path)
         return Path(output_path)
+
