@@ -1,8 +1,7 @@
 build:
-  cog_runtime: true
   gpu: true
   python_version: "3.10"
   cuda: "11.8"
   python_requirements: requirements.txt
 
-predict: model.py:Predictor
+predict: "model:Predictor"
