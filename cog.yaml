@@ -2,17 +2,6 @@ build:
   gpu: true
   python_version: "3.10"
   cuda: "11.8"
-  python_packages:
-    - torch==2.0.1+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-    - torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-    - diffusers==0.25.0
-    - transformers==4.31.0
-    - accelerate==0.22.0
-    - safetensors==0.3.1
-    - opencv-python
-    - pillow
-    - numpy<2
-    - cog
-    - huggingface_hub==0.17.3
+  python_requirements: requirements.txt
 
-predict: "model.Predictor"
+predict: model.py:Predictor
