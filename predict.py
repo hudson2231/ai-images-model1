@@ -1,22 +1,23 @@
 import os
+import cv2
 import torch
 import numpy as np
 from cog import BasePredictor, Input, Path
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 from PIL import Image
-import requests
-from io import BytesIO
+from transformers import AutoImageProcessor, UperNetForSemanticSegmentation
 
 class Predictor(BasePredictor):
     def setup(self):
-        controlnet = ControlNetModel.from_pretrained(
+        # Load ControlNet HED model
+        self.controlnet = ControlNetModel.from_pretrained(
             "lllyasviel/sd-controlnet-hed",
             torch_dtype=torch.float16
         )
 
         self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
-            controlnet=controlnet,
+            controlnet=self.controlnet,
             torch_dtype=torch.float16
         ).to("cuda")
 
@@ -25,26 +26,49 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        input_image: Path = Input(description="Photo to convert to coloring page line art"),
+        input_image: Path = Input(description="Uploaded photo to convert to line art"),
         prompt: str = Input(
-            description="Prompt for generation",
-            default="Highly detailed black and white line art of the entire photo. Preserve all facial features and background. Clean lines only, no shading, coloring book style."
+            description="Prompt for style",
+            default="Detailed clean black and white line art drawing of the subject and background. No shading. High detail. Coloring book page style."
         ),
         num_inference_steps: int = Input(description="Steps for generation", default=25),
-        guidance_scale: float = Input(description="Prompt adherence", default=12.0),
-        seed: int = Input(description="Random seed", default=42),
+        guidance_scale: float = Input(description="Classifier-free guidance scale", default=12.5),
+        seed: int = Input(description="Random seed (for reproducibility)", default=42),
     ) -> Path:
         torch.manual_seed(seed)
 
+        # Load and process input image
         image = Image.open(input_image).convert("RGB")
+        np_image = np.array(image)
 
+        # --- HED Detection (cleaner than canny) ---
+        import cv2
+        from diffusers.utils import load_image
+        from diffusers.utils import load_image, make_image_grid
+        from transformers import pipeline as transformers_pipeline
+
+        # Use the Diffusers' builtin HED processor
+        from diffusers.pipelines.controlnet.multicontrolnet import MultiControlNetModel
+        from diffusers.utils import load_image
+        from diffusers.pipelines.controlnet import StableDiffusionControlNetPipeline
+        from diffusers.pipelines.controlnet import ControlNetModel, ControlNetConditioningImageTransform
+
+        from controlnet_aux import HEDdetector
+
+        hed = HEDdetector.from_pretrained("lllyasviel/ControlNet")
+
+        edge_image = hed(image)
+        edge_pil = edge_image.resize(image.size)
+
+        # Run generation
         output = self.pipe(
-            image=image,
             prompt=prompt,
+            image=edge_pil,
             num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
+            guidance_scale=guidance_scale
         ).images[0]
 
         output_path = "/tmp/output.png"
         output.save(output_path)
         return Path(output_path)
+
